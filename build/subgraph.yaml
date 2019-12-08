@@ -1,0 +1,54 @@
+specVersion: 0.0.2
+schema:
+  file: schema.graphql
+dataSources:
+  - kind: ethereum/contract
+    name: Contract
+    network: mainnet
+    source:
+      address: "0x080bf510fcbf18b91105470639e9561022937712"
+      abi: Contract
+      startBlock: 8978324
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.3
+      language: wasm/assemblyscript
+      entities:
+        - Transaction
+        - Token
+        - Buyer
+        - Seller
+        - Market
+      abis:
+        - name: Contract
+          file: Contract/abis/Contract.json
+      eventHandlers:
+        - event: Fill(indexed address,indexed
+            address,address,address,uint256,uint256,uint256,uint256,indexed
+            bytes32,bytes,bytes)
+          handler: handleFill
+      file: Contract/Contract.wasm
+  - kind: ethereum/contract
+    name: GodsUnchained
+    network: mainnet
+    source:
+      address: "0x0e3a2a1f2146d86a604adc220b4967a898d7fe07"
+      abi: GodsUnchained
+      startBlock: 8978324
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.3
+      language: wasm/assemblyscript
+      entities:
+        - Transaction
+        - Token
+        - Buyer
+        - Seller
+        - Market
+      abis:
+        - name: GodsUnchained
+          file: GodsUnchained/abis/GodsUnchained.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,indexed uint256)
+          handler: handleTransfer
+      file: GodsUnchained/GodsUnchained.wasm

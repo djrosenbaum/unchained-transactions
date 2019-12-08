@@ -1,0 +1,34 @@
+type Transaction @entity {
+  id: ID!
+  buyer: Buyer
+  market: Market #feeRecipientAddress
+  price: BigInt #takerAssetFilledAmount
+  seller: Seller
+  timestamp: Int
+  token: Token
+  proto: Int
+  quality: Int
+}
+
+type Token @entity {
+  id: ID! # where id is the tokenID from the contract
+  index: BigInt!
+  proto: Int
+  quality: Int
+  transactions: [Transaction!]! @derivedFrom(field: "token")
+}
+
+type Buyer @entity {
+  id: ID!
+  transactions: [Transaction!]! @derivedFrom(field: "buyer")
+}
+
+type Seller @entity {
+  id: ID!
+  transactions: [Transaction!]! @derivedFrom(field: "seller")
+}
+
+type Market @entity {
+  id: ID! # feeRecipientAddress
+  transactions: [Transaction!] @derivedFrom(field: "market")
+}
