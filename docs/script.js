@@ -1,16 +1,30 @@
 (function() {
   async function getTransactions(proto, quality) {
-    const graphId = 'QmSoWqxoCBH6FeYPtrqEnVqAWEgxjpu2PD6xhjzUFPBzpf';      
+    const graphId = 'QmSoWqxoCBH6FeYPtrqEnVqAWEgxjpu2PD6xhjzUFPBzpf';
     return await fetch(`https://api.thegraph.com/subgraphs/id/${graphId}`, {
     method: 'POST',
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
     },
-    body: JSON.stringify({query: `{ transactions(first: 50, orderBy: timestamp, orderDirection: desc, where:{ proto: ${proto}, quality: ${quality}, market_not: null }) { price timestamp } }`})
+    body: JSON.stringify({query: `{ transactions(first: ${getFirst()}, orderBy: timestamp, orderDirection: desc, where:{ proto: ${proto}, quality: ${quality}, market_not: null }) { price timestamp } }`})
     })
     .then(r => r.json())
     // .then(data => console.log('data returned:', data.data));
+  }
+
+  function getFirst() {
+    const w = window.innerWidth;
+    if (w < 600) {
+      return 20;
+    }
+    if (w < 800) {
+      return 30;
+    }
+    if (w < 1000) {
+      return 40;
+    }
+    return 50;
   }
 
   async function handleInput() {
@@ -24,7 +38,7 @@
   }
 
   function generateChart(data) {
-    document.querySelector('.canvas-wrapper').innerHTML = '<canvas id="myChart" width="800" height="400"></canvas>';
+    document.querySelector('.canvas-wrapper').innerHTML = '<canvas id="myChart"></canvas>';
 
     var ctx = document.getElementById('myChart').getContext('2d');
     var myChart = new Chart(ctx, {
