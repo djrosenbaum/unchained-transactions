@@ -39,22 +39,28 @@ select {
 .caption {
   color: #ccc;
   font-size: 16px;
+  margin-bottom: 20px;
   text-align: center;
 }
 
 .options {
-  margin-top: 50px;
   margin-bottom: 10px;
 }
 
-.canvas-wrapper {
+.card-wrapper {
+  margin: 0 auto;
+  margin-bottom: 20px;
+  width: 150px;
+}
+
+.chart-wrapper {
   background-color: #222;
   margin-bottom: 30px;
   max-width: 800px;
   position: relative;
 }
 
-.canvas-wrapper canvas {
+.chart-wrapper canvas {
   box-sizing: border-box;
   padding: 20px;
 }

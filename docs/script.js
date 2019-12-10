@@ -7,13 +7,13 @@
         'Content-Type': 'application/json',
         'Accept': 'application/json',
     },
-    body: JSON.stringify({query: `{ transactions(first: ${getFirst()}, orderBy: timestamp, orderDirection: desc, where:{ proto: ${proto}, quality: ${quality}, market_not: null }) { price timestamp } }`})
+    body: JSON.stringify({query: `{ transactions(first: 1000, orderBy: timestamp, orderDirection: desc, where:{ proto: ${proto}, quality: ${quality}, market_not: null }) { price timestamp } }`})
     })
     .then(r => r.json())
     // .then(data => console.log('data returned:', data.data));
   }
 
-  function getFirst() {
+  function getLimit() {
     const w = window.innerWidth;
     if (w < 600) {
       return 20;
@@ -34,20 +34,26 @@
     const data = await getTransactions(proto, quality);
     console.log('data:', data);
 
-    generateChart(data.data);
+    showCard(proto, quality);
+    generatePriceChart(data.data);
+    generateVolumeChart(data.data);
   }
 
-  function generateChart(data) {
-    document.querySelector('.canvas-wrapper').innerHTML = '<canvas id="myChart"></canvas>';
+  function showCard(proto, quality) {
+    document.querySelector('.card-wrapper').innerHTML = `<composited-card class="card" protoId="${proto}" quality="${quality}" responsiveSrcsetSizes="(min-width: 250px) 160px, 320px"></composited-card>`;
+  }
 
-    var ctx = document.getElementById('myChart').getContext('2d');
-    var myChart = new Chart(ctx, {
+  function generatePriceChart(data) {
+    document.querySelector('#price_chart').innerHTML = '<canvas id="priceChart"></canvas>';
+
+    const ctx = document.getElementById('priceChart').getContext('2d');
+    new Chart(ctx, {
       type: 'line',
       data: {
-        labels: getLabels(),
+        labels: getPriceLabels(),
         datasets: [{
           color: "#ffffff",
-          label: 'Token Price',
+          label: 'line price',
           data: getPrice(),
           backgroundColor: 'rgba(255, 255, 255, 0.9)',
           borderColor: 'rgba(255, 255, 255, 0.5)',
@@ -78,8 +84,9 @@
       }
     });
 
-    function getLabels() {
-      return data.transactions.map((transaction) => {
+    function getPriceLabels() {
+      const transactions = data.transactions.slice(0, getLimit());
+      return transactions.map((transaction) => {
         const date = new Date(transaction.timestamp * 1000).toLocaleDateString();
         // const price = ethers.utils.formatEther(transaction.price);
         return date;
@@ -87,8 +94,80 @@
     }
 
     function getPrice() {
-      return data.transactions.map((transaction) => ethers.utils.formatEther(transaction.price)).reverse();
+      const transactions = data.transactions.slice(0, getLimit());
+      return transactions.map((transaction) => ethers.utils.formatEther(transaction.price)).reverse();
     }
+  }
+
+  function generateVolumeChart(data) {
+    document.querySelector('#volume_chart').innerHTML = '<canvas id="volumeChart"></canvas>';
+
+    const ctx = document.getElementById('volumeChart').getContext('2d');
+
+    const transactionsByDay = getTransactionsByDay(data);
+
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: getVolumeLabels(),
+        datasets: [{
+          color: "#ffffff",
+          label: 'bar volume',
+          data: getVolume(),
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+          borderColor: 'rgba(255, 255, 255, 0.5)',
+          fill: false,
+        }],
+      },
+      options: {
+        scales: {
+          yAxes: [{
+            ticks: {
+              beginAtZero: true
+            },
+            gridLines: {
+              display: true,
+              color: "#777"
+            },
+          }],
+          xAxes: [{
+            gridLines: {
+              display: true,
+              color: "#555"
+            },
+          }]
+        },
+        legend: {
+          display: false
+        },
+      }
+    });
+
+    function getVolumeLabels() {
+      return Object.keys(transactionsByDay).reverse();
+    }
+
+    function getVolume() {
+      return Object.keys(transactionsByDay).map(day => transactionsByDay[day].total).reverse();
+    }
+  }
+
+  function getTransactionsByDay(data) {
+    const dates = {};
+
+    for (let i = 0; i < 10; i++) {
+      let date = moment().subtract(i,'d').format('YYYY-MM-DD');
+      dates[date] = {total: 0};
+    }
+
+    data.transactions.forEach((transaction) => {
+      const date = moment(transaction.timestamp * 1000).format('YYYY-MM-DD');
+      if (dates[date]) {
+        dates[date].total++;
+      }
+    });
+
+    return dates;
   }
 
   function generateOptions() {
