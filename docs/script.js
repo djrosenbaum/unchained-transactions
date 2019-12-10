@@ -53,7 +53,7 @@
         labels: getPriceLabels(),
         datasets: [{
           color: "#ffffff",
-          label: 'line price',
+          label: 'price',
           data: getPrice(),
           backgroundColor: 'rgba(255, 255, 255, 0.9)',
           borderColor: 'rgba(255, 255, 255, 0.5)',
@@ -112,7 +112,7 @@
         labels: getVolumeLabels(),
         datasets: [{
           color: "#ffffff",
-          label: 'bar volume',
+          label: 'transactions',
           data: getVolume(),
           backgroundColor: 'rgba(255, 255, 255, 0.9)',
           borderColor: 'rgba(255, 255, 255, 0.5)',
