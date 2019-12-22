@@ -1,6 +1,13 @@
 (function() {
+  const graphId = 'QmSoWqxoCBH6FeYPtrqEnVqAWEgxjpu2PD6xhjzUFPBzpf';
+  const marketData = {
+    fetched: false,
+    transactions: []
+  };
+
+  window.marketData = marketData;
+
   async function getTransactions(proto, quality) {
-    const graphId = 'QmSoWqxoCBH6FeYPtrqEnVqAWEgxjpu2PD6xhjzUFPBzpf';
     return await fetch(`https://api.thegraph.com/subgraphs/id/${graphId}`, {
     method: 'POST',
     headers: {
@@ -11,6 +18,24 @@
     })
     .then(r => r.json())
     // .then(data => console.log('data returned:', data.data));
+  }
+
+  async function getMarketVolume(skip) {
+    marketData.fetched = true;
+    const currentHour = parseInt(moment().format('H'));
+    const timestamp = parseInt(moment().subtract(currentHour,'H').format('X'), 10);
+
+    const data = await fetch(`https://api.thegraph.com/subgraphs/id/${graphId}`, {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+    },
+    body: JSON.stringify({query: `{ transactions(first: 1000, skip:${skip * 1000} orderBy: timestamp, orderDirection: desc, where:{ timestamp_gt: ${timestamp}, market_not: null }) { price timestamp } }`})
+    })
+    .then(r => r.json());
+
+    return data;
   }
 
   function getLimit() {
@@ -37,6 +62,20 @@
     showCard(proto, quality);
     generatePriceChart(data.data);
     generateVolumeChart(data.data);
+
+    if (!marketData.fetched) {
+      await getAllMarketData(0);
+      generateMarketVolumeChart();
+    }
+  }
+
+  async function getAllMarketData(skip) {
+    const data = await getMarketVolume(skip);
+    marketData.transactions = marketData.transactions.concat(data.data.transactions);
+
+    if (data.data.transactions.length === 1000) {
+      await getAllMarketData(skip + 1);
+    }
   }
 
   function showCard(proto, quality) {
@@ -152,6 +191,61 @@
     }
   }
 
+  function generateMarketVolumeChart() {
+    document.querySelector('#market_chart').innerHTML = '<canvas id="marketChart"></canvas>';
+
+    const ctx = document.getElementById('marketChart').getContext('2d');
+
+    const transactionsByHour = getTransactionsByHour(marketData);
+
+    console.log('transactionsByHour:', transactionsByHour);
+
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: getVolumeLabels(),
+        datasets: [{
+          color: "#ffffff",
+          label: 'transactions',
+          data: getVolume(),
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+          borderColor: 'rgba(255, 255, 255, 0.5)',
+          fill: false,
+        }],
+      },
+      options: {
+        scales: {
+          yAxes: [{
+            ticks: {
+              beginAtZero: true
+            },
+            gridLines: {
+              display: true,
+              color: "#777"
+            },
+          }],
+          xAxes: [{
+            gridLines: {
+              display: true,
+              color: "#555"
+            },
+          }]
+        },
+        legend: {
+          display: false
+        },
+      }
+    });
+
+    function getVolumeLabels() {
+      return Object.keys(transactionsByHour);
+    }
+
+    function getVolume() {
+      return Object.keys(transactionsByHour).map(hour => transactionsByHour[hour].total);
+    }
+  }
+
   function getTransactionsByDay(data) {
     const dates = {};
 
@@ -168,6 +262,24 @@
     });
 
     return dates;
+  }
+
+  function getTransactionsByHour(data) {
+    const currentHour = parseInt(moment().format('H'));
+
+    const hours = {};
+    for (let i = 0; i <= currentHour; i++) {
+      hours[i] = {total: 0};
+    }
+
+    data.transactions.forEach((transaction) => {
+      const hour = moment(transaction.timestamp * 1000).format('H');
+      if (hours[hour]) {
+        hours[hour].total++;
+      }
+    });
+
+    return hours
   }
 
   function generateOptions() {
