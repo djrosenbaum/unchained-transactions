@@ -56,6 +56,8 @@
     const proto = document.querySelector('#proto').value;
     const quality = document.querySelector('#quality').value;
 
+    updateUrl(proto, quality);
+
     const data = await getTransactions(proto, quality);
     console.log('data:', data);
 
@@ -290,9 +292,23 @@
     document.querySelector('#proto').innerHTML = markup;
   }
 
+  function updateUrl(proto, quality) {
+    const state = { proto, quality };
+    const title = 'Unchained Marketprice';
+    const url = `${window.location.href.split('?')[0]}?proto=${proto}&quality=${quality}`;
+
+    history.pushState(state, title, url);
+  }
+
   window.addEventListener('DOMContentLoaded', (event) => {
     generateOptions();
     document.addEventListener('input', handleInput, false);
+
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('proto') && urlParams.has('quality')) {
+      document.querySelector('#proto').value = urlParams.get('proto');
+      document.querySelector('#quality').value = urlParams.get('quality');
+    }
     
     handleInput();
   });
